@@ -1,0 +1,26 @@
+//声明proto的版本 只有 proto3 才支持 gRPC
+syntax = "proto3";
+// 将编译后文件输出在 github.com/lixd/grpc-go-example/helloworld/helloworld 目录
+option go_package = "github.com/lixd/grpc-go-example/helloworld/helloworld";
+// 指定当前proto文件属于helloworld包
+package helloworld;
+
+// 定义一个名叫 greeting 的服务
+service Greeter {
+  // 该服务包含一个 SayHello 方法 HelloRequest、HelloReply分别为该方法的输入与输出
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+}
+// 具体的参数定义
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+}
+
+/*
+protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+   ./hello_world.proto
+*/

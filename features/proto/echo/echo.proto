@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "github.com/lixd/grpc-go-example/features/proto/echo";
+
+package echo;
+
+
+// Echo 服务，包含了4种类型API
+service Echo {
+  // UnaryAPI
+  rpc UnaryEcho(EchoRequest) returns (EchoResponse) {}
+  // SServerStreaming
+  rpc ServerStreamingEcho(EchoRequest) returns (stream EchoResponse) {}
+  // ClientStreamingE
+  rpc ClientStreamingEcho(stream EchoRequest) returns (EchoResponse) {}
+  // BidirectionalStreaming
+  rpc BidirectionalStreamingEcho(stream EchoRequest) returns (stream EchoResponse) {}
+}
+
+message EchoRequest {
+  string message = 1;
+}
+
+message EchoResponse {
+  string message = 1;
+}

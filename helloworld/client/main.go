@@ -36,3 +36,11 @@ func main() {
 	}
 	log.Printf("Greeting: %s", r.GetMessage())
 }
+
+/*
+./ghz --insecure \
+  --proto ./hello_world.proto \
+  --call helloworld.Greeter.SayHello \
+  -d '{"name":"Joe"}' \
+  0.0.0.0:50051
+*/

@@ -8,23 +8,15 @@ import (
 	"io"
 	"log"
 	"net"
-	"strings"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
-
+	"github.com/lixd/grpc-go-example/data"
 	pb "github.com/lixd/grpc-go-example/features/proto/echo"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-var (
-	port = flag.Int("port", 50051, "the port to serve on")
-
-	errMissingMetadata = status.Errorf(codes.InvalidArgument, "missing metadata")
-	errInvalidToken    = status.Errorf(codes.Unauthenticated, "invalid token")
-)
+var port = flag.Int("port", 50051, "the port to serve on")
 
 // logger 简单打印日志
 func logger(format string, a ...interface{}) {
@@ -58,38 +50,22 @@ func (s *server) BidirectionalStreamingEcho(stream pb.Echo_BidirectionalStreamin
 	}
 }
 
-// valid validates the authorization.
-func valid(authorization []string) bool {
-	if len(authorization) < 1 {
-		return false
-	}
-	token := strings.TrimPrefix(authorization[0], "Bearer ")
-	// Perform the token validation here. For the sake of this example, the code
-	// here forgoes any of the usual OAuth2 token validation and instead checks
-	// for a token matching an arbitrary string.
-	return token == "some-secret-token"
-}
-
+// unaryInterceptor 一元拦截器：记录请求日志
 func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	// authentication (token verification)
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return nil, errMissingMetadata
-	}
-	if !valid(md["authorization"]) {
-		return nil, errInvalidToken
-	}
+	start := time.Now()
 	m, err := handler(ctx, req)
-	if err != nil {
-		logger("RPC failed with error %v", err)
-	}
+	end := time.Now()
+	// 记录请求参数 耗时 错误信息等数据
+	logger("RPC: %s,req:%v start time: %s, end time: %s, err: %v", info.FullMethod, req, start.Format(time.RFC3339), end.Format(time.RFC3339), err)
 	return m, err
 }
 
-// wrappedStream wraps around the embedded grpc.ServerStream, and intercepts the RecvMsg and
-// SendMsg method call.
 type wrappedStream struct {
 	grpc.ServerStream
+}
+
+func newWrappedStream(s grpc.ServerStream) grpc.ServerStream {
+	return &wrappedStream{s}
 }
 
 func (w *wrappedStream) RecvMsg(m interface{}) error {
@@ -102,20 +78,8 @@ func (w *wrappedStream) SendMsg(m interface{}) error {
 	return w.ServerStream.SendMsg(m)
 }
 
-func newWrappedStream(s grpc.ServerStream) grpc.ServerStream {
-	return &wrappedStream{s}
-}
-
 func streamInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	// authentication (token verification)
-	md, ok := metadata.FromIncomingContext(ss.Context())
-	if !ok {
-		return errMissingMetadata
-	}
-	if !valid(md["authorization"]) {
-		return errInvalidToken
-	}
-
+	// 包装 grpc.ServerStream 以替换 RecvMsg SendMsg这两个方法。
 	err := handler(srv, newWrappedStream(ss))
 	if err != nil {
 		logger("RPC failed with error %v", err)
@@ -131,15 +95,13 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	// Create tls based credential.
-	// creds, err := credentials.NewServerTLSFromFile(data.Path("x509/server.crt"), data.Path("x509/server.key"))
-	// if err != nil {
-	// 	log.Fatalf("failed to create credentials: %v", err)
-	// }
+	creds, err := credentials.NewServerTLSFromFile(data.Path("x509/server.crt"), data.Path("x509/server.key"))
+	if err != nil {
+		log.Fatalf("failed to create credentials: %v", err)
+	}
 
-	s := grpc.NewServer( /*grpc.Creds(creds),*/ grpc.UnaryInterceptor(unaryInterceptor), grpc.StreamInterceptor(streamInterceptor))
+	s := grpc.NewServer(grpc.Creds(creds), grpc.UnaryInterceptor(unaryInterceptor), grpc.StreamInterceptor(streamInterceptor))
 
-	// Register EchoServer on the server.
 	pb.RegisterEchoServer(s, &server{})
 	log.Println("Server gRPC on 0.0.0.0" + fmt.Sprintf(":%d", *port))
 	if err := s.Serve(lis); err != nil {

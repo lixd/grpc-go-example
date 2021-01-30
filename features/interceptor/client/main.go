@@ -8,16 +8,14 @@ import (
 	"log"
 	"time"
 
+	"github.com/lixd/grpc-go-example/data"
 	ecpb "github.com/lixd/grpc-go-example/features/proto/echo"
-	"golang.org/x/oauth2"
+	"google.golang.org/grpc/credentials"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/oauth"
 )
 
 var addr = flag.String("addr", "localhost:50051", "the address to connect to")
-
-const fallbackToken = "some-secret-token"
 
 // logger 简单打印日志
 func logger(format string, a ...interface{}) {
@@ -26,29 +24,22 @@ func logger(format string, a ...interface{}) {
 
 // unaryInterceptor 一个简单的 unary interceptor 示例。
 func unaryInterceptor(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	var credsConfigured bool
-	for _, o := range opts {
-		_, ok := o.(grpc.PerRPCCredsCallOption)
-		if ok {
-			credsConfigured = true
-			break
-		}
-	}
-	if !credsConfigured {
-		opts = append(opts, grpc.PerRPCCredentials(oauth.NewOauthAccess(&oauth2.Token{
-			AccessToken: fallbackToken,
-		})))
-	}
+	// pre-processing
 	start := time.Now()
-	err := invoker(ctx, method, req, reply, cc, opts...)
+	err := invoker(ctx, method, req, reply, cc, opts...) // invoking RPC method
+	// post-processing
 	end := time.Now()
-	logger("RPC: %s, start time: %s, end time: %s, err: %v", method, start.Format("Basic"), end.Format(time.RFC3339), err)
+	logger("RPC: %s, req:%v start time: %s, end time: %s, err: %v", method, req, start.Format(time.RFC3339), end.Format(time.RFC3339), err)
 	return err
 }
 
 // wrappedStream  用于包装 grpc.ClientStream 结构体并拦截其对应的方法。
 type wrappedStream struct {
 	grpc.ClientStream
+}
+
+func newWrappedStream(s grpc.ClientStream) grpc.ClientStream {
+	return &wrappedStream{s}
 }
 
 func (w *wrappedStream) RecvMsg(m interface{}) error {
@@ -61,25 +52,8 @@ func (w *wrappedStream) SendMsg(m interface{}) error {
 	return w.ClientStream.SendMsg(m)
 }
 
-func newWrappedStream(s grpc.ClientStream) grpc.ClientStream {
-	return &wrappedStream{s}
-}
-
 // streamInterceptor 一个简单的 stream interceptor 示例。
 func streamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	var credsConfigured bool
-	for _, o := range opts {
-		_, ok := o.(*grpc.PerRPCCredsCallOption)
-		if ok {
-			credsConfigured = true
-			break
-		}
-	}
-	if !credsConfigured {
-		opts = append(opts, grpc.PerRPCCredentials(oauth.NewOauthAccess(&oauth2.Token{
-			AccessToken: fallbackToken,
-		})))
-	}
 	s, err := streamer(ctx, desc, cc, method, opts...)
 	if err != nil {
 		return nil, err
@@ -104,7 +78,7 @@ func callBidiStreamingEcho(client ecpb.EchoClient) {
 	if err != nil {
 		return
 	}
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 2; i++ {
 		if err := c.Send(&ecpb.EchoRequest{Message: fmt.Sprintf("Request %d", i+1)}); err != nil {
 			log.Fatalf("failed to send request due to error: %v", err)
 		}
@@ -129,21 +103,18 @@ func callBidiStreamingEcho(client ecpb.EchoClient) {
 func main() {
 	flag.Parse()
 
-	// Create tls based credential.
-	// creds, err := credentials.NewClientTLSFromFile(data.Path("x509/server.crt"), "www.lixueduan.com")
-	// if err != nil {
-	// 	log.Fatalf("failed to load credentials: %v", err)
-	// }
+	creds, err := credentials.NewClientTLSFromFile(data.Path("x509/server.crt"), "www.lixueduan.com")
+	if err != nil {
+		log.Fatalf("failed to load credentials: %v", err)
+	}
 
-	// Set up a connection to the server.
-	// conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(creds), grpc.WithUnaryInterceptor(unaryInterceptor), grpc.WithStreamInterceptor(streamInterceptor), grpc.WithBlock())
-	conn, err := grpc.Dial(*addr /*grpc.WithTransportCredentials(creds),*/, grpc.WithInsecure(), grpc.WithUnaryInterceptor(unaryInterceptor), grpc.WithStreamInterceptor(streamInterceptor), grpc.WithBlock())
+	// 建立连接时指定要加载的拦截器
+	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(creds), grpc.WithUnaryInterceptor(unaryInterceptor), grpc.WithStreamInterceptor(streamInterceptor), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
 
-	// Make a echo client and send RPCs.
 	client := ecpb.NewEchoClient(conn)
 	callUnaryEcho(client, "hello world")
 	callBidiStreamingEcho(client)

@@ -1,0 +1,12 @@
+syntax = "proto3";
+option go_package = "protobuf/import;proto";
+package import;
+
+message CPU {
+  string Name = 1;
+  int64 Frequency = 2;
+}
+message Memory {
+  string Name = 1;
+  int64 Cap = 2;
+}

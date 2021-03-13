@@ -20,3 +20,6 @@ gen-gw:
    --go-grpc_out=./features/proto --go-grpc_opt=paths=source_relative \
    --grpc-gateway_out=./features/proto --grpc-gateway_opt=paths=source_relative \
    ./features/proto/gateway/gateway.proto
+# proto import demo
+gen-imp:
+	protoc --proto_path=. --go_out=. ./protobuf/import/*.proto

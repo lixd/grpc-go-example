@@ -1,7 +1,7 @@
 syntax = "proto3";
 option go_package = "protobuf/import;proto";
 package import;
-import "protobuf/import/compoent.proto";
+import "protobuf/import/component.proto";
 
 message Computer {
   string name = 1;

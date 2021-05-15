@@ -13,3 +13,4 @@ gRPC Go 系列教程，配合以下文章食用更加哦。
 [gRPC系列教程(八)---使用context进行超时控制](https://www.lixueduan.com/post/grpc/08-ctx-cancel-deadline/)  
 [gRPC系列教程(九)---配置retry自动重试](https://www.lixueduan.com/post/grpc/09-retry/)  
 [gRPC系列教程(十)---gRPC压测工具ghz](https://lixueduan.com/post/grpc/10-benchmark/)  
+[gRPC系列教程(十一)---NameResolver 实战及原理分析](https://lixueduan.com/post/grpc/11-name-resolver/)  

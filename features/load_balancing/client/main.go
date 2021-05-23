@@ -13,7 +13,7 @@ import (
 
 const (
 	exampleScheme      = "example"
-	exampleServiceName = "lb.example.grpc.io"
+	exampleServiceName = "lb.example.grpc.lixueduan.com"
 )
 
 var addrs = []string{"localhost:50051", "localhost:50052"}

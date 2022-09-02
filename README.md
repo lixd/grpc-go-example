@@ -1,7 +1,7 @@
 # grpc-go-example
 grpc go example
 gRPC Go 系列教程，配合以下文章食用更加哦。  
-[gRPC(Go)系列教程](https://www.lixueduan.com/categories/gRPC/)  
+[gRPC(Go)系列教程](https://www.lixueduan.com/categories/grpc/)  
 [gRPC(Go)系列教程(零)---使用gRPC时遇到的问题](https://www.lixueduan.com/post/grpc/00-faq/)  
 [gRPC(Go)系列教程(一)---Protobuf](https://www.lixueduan.com/post/grpc/01-protobuf/)  
 [gRPC(Go)系列(教程二)---Hello gRPC](https://www.lixueduan.com/post/grpc/02-hello-world/)  

@@ -14,5 +14,5 @@ gRPC Go 系列教程，配合以下文章食用更加哦。
 [gRPC(Go)系列教程(九)---配置retry自动重试](https://www.lixueduan.com/post/grpc/09-retry/)  
 [gRPC(Go)系列教程(十)---gRPC压测工具ghz](https://lixueduan.com/post/grpc/10-benchmark/)  
 [gRPC(Go)系列教程(十一)---NameResolver 实战及原理分析](https://lixueduan.com/post/grpc/11-name-resolver/)  
-[gRPC(Go)系列教程(十二)---客户端负载均衡](https://lixueduan.com/post/grpc/12-buildin-loadbalance/)  
+[gRPC(Go)系列教程(十二)---客户端负载均衡](https://www.lixueduan.com/posts/grpc/12-client-side-loadbalance/)  
 [gRPC(Go)系列教程(十三)---Kubernetes 中的 gRPC 负载均衡](https://www.lixueduan.com/post/grpc/13-loadbalance-on-k8s/)
